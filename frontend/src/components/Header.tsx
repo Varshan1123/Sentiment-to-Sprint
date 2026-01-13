@@ -34,7 +34,7 @@ export function Header() {
               <span className="mr-1.5">📱</span> Reddit
             </Badge>
             <Badge variant="secondary" className="bg-white/12 text-white border-white/20 hover:bg-white/20 transition-all">
-              <span className="mr-1.5">G</span> Googel Search
+              <span className="mr-1.5">G</span> Google Search
             </Badge>
             <Badge variant="secondary" className="bg-white/12 text-white border-white/20 hover:bg-white/20 transition-all">
               <span className="mr-1.5">✨</span> AI Analysis
