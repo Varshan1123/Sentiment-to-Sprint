@@ -1,6 +1,8 @@
-# Backend - Multi-Source Review Scraper API
+# Backend - Sentiment to Sprint API
 
 A production-ready FastAPI application for scraping app reviews from multiple sources and performing AI-powered sentiment analysis using Google Gemini.
+
+> 📖 For product overview and vision, see the [Main README](../README.md)
 
 ## ✨ Features
 
@@ -11,7 +13,92 @@ A production-ready FastAPI application for scraping app reviews from multiple so
 - **Task Prioritization**: MoSCoW and Lean prioritization frameworks
 - **Async Architecture**: Non-blocking I/O with `httpx` and `asyncio`
 
-## 🏗️ Architecture
+---
+
+## 🛠 Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| **Python 3.10+** | Core language |
+| **FastAPI** | High-performance async web framework |
+| **Pydantic v2** | Data validation and serialization |
+| **Redis** | Task queue and result caching |
+| **httpx** | Async HTTP client for scraping |
+| **BeautifulSoup4** | HTML parsing for Reddit |
+| **Google Gemini** | AI sentiment analysis |
+| **SerpAPI** | Google/App Store data extraction |
+| **WebSockets** | Real-time progress updates |
+| **Uvicorn** | ASGI server |
+
+### DevOps & Tools
+
+| Technology | Purpose |
+|------------|---------|
+| **Docker** | Containerization (planned) |
+| **Render** | Backend deployment |
+| **Git** | Version control |
+
+---
+
+## 🏗️ System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              FRONTEND (Next.js)                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
+│  │ AnalysisForm│  │ProgressModal│  │ ResultsView │  │PrioritizationResults│ │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────────┬──────────┘ │
+│         │                │                │                     │            │
+│         └────────────────┴────────────────┴─────────────────────┘            │
+│                                    │                                          │
+│                          ┌─────────▼─────────┐                               │
+│                          │    API Client     │                               │
+│                          │  (lib/api.ts)     │                               │
+│                          └─────────┬─────────┘                               │
+└────────────────────────────────────┼─────────────────────────────────────────┘
+                                     │ REST API / WebSocket
+┌────────────────────────────────────┼─────────────────────────────────────────┐
+│                              BACKEND (FastAPI)                               │
+│                          ┌─────────▼─────────┐                               │
+│                          │   API Endpoints   │                               │
+│                          │ (scraper.py)      │                               │
+│                          └─────────┬─────────┘                               │
+│                                    │                                          │
+│    ┌───────────────────────────────┼───────────────────────────────┐         │
+│    │                               │                               │         │
+│    ▼                               ▼                               ▼         │
+│ ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐│
+│ │Google    │  │Apple     │  │Reddit    │  │Google    │  │  Prioritization  ││
+│ │Play      │  │Store     │  │Scraper   │  │Search    │  │  Engine          ││
+│ │Scraper   │  │Scraper   │  │(httpx)   │  │Scraper   │  │  (MoSCoW/Lean)   ││
+│ │(SerpAPI) │  │(SerpAPI) │  │          │  │(SerpAPI) │  │                  ││
+│ └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────────┬─────────┘│
+│      │             │             │             │                  │          │
+│      └─────────────┴─────────────┴─────────────┘                  │          │
+│                          │                                        │          │
+│                ┌─────────▼─────────┐                             │          │
+│                │   Data Processor  │                             │          │
+│                │   (Aggregation)   │                             │          │
+│                └─────────┬─────────┘                             │          │
+│                          │                                        │          │
+│                ┌─────────▼─────────┐              ┌──────────────▼────────┐ │
+│                │  Gemini AI        │              │       Redis           │ │
+│                │  Sentiment Engine │◄─────────────►  Task Storage         │ │
+│                └───────────────────┘              │  (24hr TTL)           │ │
+│                                                   └───────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                     │
+                    ┌────────────────┼────────────────┐
+                    ▼                ▼                ▼
+            ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+            │ Google Play │  │ App Store   │  │   Reddit    │
+            │   API       │  │   API       │  │   Website   │
+            └─────────────┘  └─────────────┘  └─────────────┘
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 app/
@@ -166,19 +253,21 @@ curl -X POST http://localhost:8000/api/v1/prioritize \
   }'
 ```
 
-## 📊 Analysis Output
+## 📊 Analysis Output Categories
 
-The AI categorizes findings into 7 types:
+The AI categorizes findings into 7 actionable types:
 
-| Type | Description |
-|------|-------------|
-| `bug` | Technical issues, crashes, errors |
-| `feature_request` | User-requested new features |
-| `requirement` | Must-have missing features |
-| `usability_friction` | UX issues causing frustration |
-| `pain_point` | General user dissatisfaction |
-| `positive_review` | Things users love |
-| `ai_insight` | AI-discovered patterns |
+| Type | Icon | Description | Example |
+|------|------|-------------|---------|
+| `bug` | 🐛 | Technical issues, crashes, errors | "App crashes when uploading photos" |
+| `feature_request` | ✨ | User-requested new features | "Please add dark mode" |
+| `requirement` | 📋 | Must-have missing features | "Need offline support" |
+| `usability_friction` | 🔧 | UX issues causing frustration | "Navigation is confusing" |
+| `pain_point` | 😤 | General user dissatisfaction | "Too many ads" |
+| `positive_review` | ⭐ | Things users love | "Best app for podcasts!" |
+| `ai_insight` | 🤖 | AI-discovered patterns | "30% of users mention slow loading" |
+
+---
 
 ## ⚙️ Environment Variables
 
@@ -194,7 +283,34 @@ The AI categorizes findings into 7 types:
 ## 🔗 Related
 
 - [Frontend Documentation](../frontend/README.md) - Next.js UI application
-- [Main README](../README.md) - Project overview
+- [Main README](../README.md) - Product overview and vision
+
+---
+
+## 🎓 Skills Demonstrated
+
+This backend showcases proficiency in:
+
+### Backend Development
+- ✅ Building RESTful APIs with FastAPI
+- ✅ Async/await patterns with Python asyncio
+- ✅ WebSocket implementation for real-time updates
+- ✅ Data validation with Pydantic v2
+- ✅ Redis integration for caching and persistence
+- ✅ External API integration (SerpAPI, Gemini)
+- ✅ Web scraping with httpx and BeautifulSoup
+
+### System Design
+- ✅ Microservices architecture
+- ✅ Async task processing
+- ✅ Real-time communication patterns
+- ✅ Caching strategies
+- ✅ Clean code and separation of concerns
+
+### AI/ML Integration
+- ✅ LLM integration (Google Gemini)
+- ✅ Prompt engineering for sentiment analysis
+- ✅ Structured output parsing
 
 ---
 
